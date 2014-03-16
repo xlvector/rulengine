@@ -101,25 +101,50 @@ func (self *RuleEngine) AddRule(rule *logic.Rule) {
 func (self *RuleEngine) GetAction(data map[string]interface{}) []string {
 	exprs := self.GetFiredExpressions(data)
 	ret := []string{}
-
-	counter := make(map[int]int)
+	keys := make(map[string]bool)
 	for _, key := range exprs {
-		ids, ok := self.ruleIndex[key]
-		if ok {
-			for _, id := range ids {
-				_, ok2 := counter[id]
-				if ok2 {
-					counter[id] += 1
-				} else {
-					counter[id] = 1
+		keys[key] = true
+	}
+	checked := make(map[string]bool)
+	checkedRules := make(map[int]bool)
+	counter := make(map[int]int)
+	for {
+		if len(keys) == 0 {
+			break
+		}
+		for key, _ := range keys {
+			checked[key] = true
+			ids, ok := self.ruleIndex[key]
+			if ok {
+				for _, id := range ids {
+					_, ok2 := counter[id]
+					if ok2 {
+						counter[id] += 1
+					} else {
+						counter[id] = 1
+					}
 				}
 			}
 		}
-	}
 
-	for id, c := range counter {
-		if len(self.rules[id]) == c {
-			ret = append(ret, strings.Join(self.rules[id], "*")+" -> "+self.actions[id])
+		for id, c := range counter {
+			if len(self.rules[id]) == c {
+				_, ok := checkedRules[id]
+				if ok {
+					continue
+				}
+				checkedRules[id] = true
+				ret = append(ret, strings.Join(self.rules[id], "*")+" -> "+self.actions[id])
+				_, ok = checked[self.actions[id]]
+				if ok {
+					continue
+				}
+				keys[self.actions[id]] = true
+			}
+		}
+
+		for key, _ := range checked {
+			delete(keys, key)
 		}
 	}
 
@@ -147,7 +172,8 @@ func (self *RuleEngine) Load(fname string) {
 		}
 
 		if strings.Contains(line, "->") {
-			tks := strings.Split(strings.Trim(line, "\n"), "->")
+			tks := strings.Split(line, "->")
+
 			rule := logic.Rule{Expression: tks[0], Action: strings.Trim(tks[1], " ")}
 			self.AddRule(&rule)
 		}
