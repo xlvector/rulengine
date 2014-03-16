@@ -1,0 +1,15 @@
+mid_age := $age > 30 && $age < 50
+old_age := $age >= 50
+young_age := $age > 18 && $age <= 30
+child_age := $age <= 18
+male := $gender == male
+female := $gender == female
+high_salary := $salary > 20000
+middle_salary := $salary <= 20000 && $salary > 5000
+low_salary := $salary <= 5000 && $salary > 1000
+very_low_salary := $salary <= 1000
+
+(mid_age + young_age) * male * (middle_salary + high_salary) -> Pass
+(mid_age + young_age) * female * (low_salary + middle_salary + high_salary) -> Pass
+very_low_salary -> Reject
+child_age -> Reject
