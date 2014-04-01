@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"rulengine"
 	"rulengine/facts"
+	"runtime/debug"
 	"time"
 )
 
@@ -24,6 +25,13 @@ func NewRuleService(keys []string) *RuleService {
 }
 
 func (self *RuleService) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalln(r)
+			debug.PrintStack()
+		}
+	}()
+	log.Println(req.RemoteAddr, req.RequestURI, req.Method)
 	w.Header().Set("Content-Type", "application/json")
 	factCollection := facts.NewFactCollection()
 	for _, key := range self.keys {
