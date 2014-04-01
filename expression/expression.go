@@ -2,7 +2,9 @@ package expression
 
 import (
 	"container/list"
+	"rulengine/facts"
 	"strconv"
+	"strings"
 )
 
 func IsOperatorCh(ch rune) bool {
@@ -49,7 +51,7 @@ func ShouldSplit(a rune, b rune) bool {
 }
 
 func IsVariableCh(ch rune) bool {
-	if ch == '_' || ch == '$' {
+	if ch == '_' || ch == '$' || ch == '"' || ch == ' ' || ch == '.' {
 		return true
 	}
 	if ch >= 'a' && ch <= 'z' {
@@ -68,16 +70,26 @@ func Tokenize(expr string) []string {
 	ret := []string{}
 	tmp := []byte{}
 	prevCh := ' '
+	nQuot := 0
 	for i, ch := range expr {
+		if ch == '"' {
+			nQuot += 1
+		}
 		if i == 0 {
 			tmp = append(tmp, byte(ch))
 			prevCh = ch
 		} else {
-			if ch == ' ' || ch == '\t' {
+			if ch == '\t' || ch == '\n' {
+				continue
+			}
+			if ch == ' ' && nQuot%2 == 0 {
 				continue
 			}
 			if ShouldSplit(prevCh, ch) {
-				ret = append(ret, string(tmp))
+				str := strings.Trim(string(tmp), "\"")
+				if len(str) > 0 {
+					ret = append(ret, str)
+				}
 				tmp = []byte{}
 			}
 
@@ -87,8 +99,12 @@ func Tokenize(expr string) []string {
 			prevCh = ch
 		}
 	}
-	if len(tmp) > 0 {
-		ret = append(ret, string(tmp))
+	str := strings.Trim(string(tmp), "\"")
+	if len(str) > 0 {
+		ret = append(ret, str)
+	}
+	if nQuot%2 != 0 {
+		panic("synax error : quot number error")
 	}
 	return ret
 }
@@ -186,9 +202,9 @@ func ToReversePolishNotation(expr []string) []string {
 	return ret
 }
 
-func VariableValue(a, b string, data map[string]interface{}) (interface{}, interface{}) {
-	va, oka := data[a]
-	vb, okb := data[b]
+func VariableValue(a, b string, data *facts.FactCollection) (interface{}, interface{}) {
+	va, oka := data.Get(a)
+	vb, okb := data.Get(b)
 	if oka && okb {
 		return va, vb
 	} else if oka && !okb {
@@ -426,7 +442,7 @@ func LogicOp(a, b interface{}, op string) string {
 	return ""
 }
 
-func Calc(a, b string, op string, data map[string]interface{}) string {
+func Calc(a, b string, op string, data *facts.FactCollection) string {
 	va, vb := VariableValue(a, b, data)
 	if op == "+" || op == "-" || op == "*" || op == "/" {
 		return NumberOp(va, vb, op)
@@ -440,7 +456,7 @@ func Calc(a, b string, op string, data map[string]interface{}) string {
 	}
 }
 
-func CalcReversePolishNotation(expr []string, data map[string]interface{}) interface{} {
+func CalcReversePolishNotation(expr []string, data *facts.FactCollection) interface{} {
 	s := list.New()
 	for _, tk := range expr {
 		if IsOperator(tk) {

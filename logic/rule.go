@@ -117,7 +117,7 @@ func AndOrFormat(exp string) *UnionedAndSet {
 			num += 1
 		} else if ch == ')' {
 			num -= 1
-		} else if ch == '*' {
+		} else if ch == '&' {
 			if num == 0 {
 				left := AndOrFormat(exp[0:i])
 				right := AndOrFormat(exp[i+1 : len(exp)])
@@ -129,7 +129,7 @@ func AndOrFormat(exp string) *UnionedAndSet {
 				}
 				return ret
 			}
-		} else if ch == '+' {
+		} else if ch == '|' {
 			if num == 0 {
 				left := AndOrFormat(exp[0:i])
 				right := AndOrFormat(exp[i+1 : len(exp)])

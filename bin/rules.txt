@@ -1,18 +1,3 @@
-mid_age := $age > 30 && $age < 50
-old_age := $age >= 50
-young_age := $age > 18 && $age <= 30
-child_age := $age <= 18
-male := $gender == male
-female := $gender == female
-high_salary := $salary > 20000
-middle_salary := $salary <= 20000 && $salary > 5000
-low_salary := $salary <= 5000 && $salary > 1000
-very_low_salary := $salary <= 1000
+creditpay_consume_larger_than_90_percent_limit := $behavior.money > $behavior.user.limit * 0.9 && $behavior.type == "consume"
 
-(mid_age + young_age) * male * (middle_salary + high_salary) -> pass
-(mid_age + young_age) * female * (low_salary + middle_salary + high_salary) -> pass
-very_low_salary -> reject
-child_age -> reject
-pass * high_salary -> limit_50000
-pass * middle_salary -> limit_10000
-pass * low_salary -> limit_5000
+creditpay_consume_larger_than_90_percent_limit -> alert

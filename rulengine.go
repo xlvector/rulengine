@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"rulengine/expression"
+	"rulengine/facts"
 	"rulengine/logic"
 	"strings"
 )
@@ -51,9 +52,9 @@ func (self *RuleEngine) AddExpression(expr string, name string) {
 	self.expressions = append(self.expressions, reversePolishExpr)
 }
 
-func (self *RuleEngine) GetFiredExpressions(data map[string]interface{}) []string {
+func (self *RuleEngine) GetFiredExpressions(data *facts.FactCollection) []string {
 	counter := make(map[int]int)
-	for k, _ := range data {
+	for _, k := range data.Keys() {
 		ids, ok := self.expressionIndex[k]
 		if ok {
 			for _, id := range ids {
@@ -70,6 +71,7 @@ func (self *RuleEngine) GetFiredExpressions(data map[string]interface{}) []strin
 	firedExpressions := []string{}
 	for k, v := range counter {
 		if v == self.varCountInExpressions[k] {
+			fmt.Println(self.expressions[k])
 			ret := expression.CalcReversePolishNotation(self.expressions[k], data)
 			if ret == "true" {
 				fmt.Println("fire expression", self.expressionNames[k], self.expressions[k])
@@ -98,9 +100,14 @@ func (self *RuleEngine) AddRule(rule *logic.Rule) {
 	}
 }
 
-func (self *RuleEngine) GetAction(data map[string]interface{}) []string {
+type Action struct {
+	Name   string
+	Reason string
+}
+
+func (self *RuleEngine) GetAction(data *facts.FactCollection) []*Action {
 	exprs := self.GetFiredExpressions(data)
-	ret := []string{}
+	ret := []*Action{}
 	keys := make(map[string]bool)
 	for _, key := range exprs {
 		keys[key] = true
@@ -134,7 +141,7 @@ func (self *RuleEngine) GetAction(data map[string]interface{}) []string {
 					continue
 				}
 				checkedRules[id] = true
-				ret = append(ret, strings.Join(self.rules[id], "*")+" -> "+self.actions[id])
+				ret = append(ret, &(Action{Name: self.actions[id], Reason: strings.Join(self.rules[id], "&")}))
 				_, ok = checked[self.actions[id]]
 				if ok {
 					continue
@@ -148,6 +155,34 @@ func (self *RuleEngine) GetAction(data map[string]interface{}) []string {
 		}
 	}
 
+	return ret
+}
+
+type ActionRecord struct {
+	Action  string   `json:"action"`
+	Reasons []string `json:"reasons"`
+}
+
+func ConverActionListToActionRecords(actions []*Action) []*ActionRecord {
+	dict := make(map[string][]int)
+	for k, a := range actions {
+		_, ok := dict[a.Name]
+		if !ok {
+			dict[a.Name] = []int{}
+		}
+		dict[a.Name] = append(dict[a.Name], k)
+	}
+	ret := []*ActionRecord{}
+	for a, ids := range dict {
+		ar := ActionRecord{
+			Action:  a,
+			Reasons: []string{},
+		}
+		for _, i := range ids {
+			ar.Reasons = append(ar.Reasons, actions[i].Reason)
+		}
+		ret = append(ret, &ar)
+	}
 	return ret
 }
 
