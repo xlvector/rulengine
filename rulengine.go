@@ -3,10 +3,10 @@ package rulengine
 import (
 	"bufio"
 	"fmt"
+	"github.com/xlvector/rulengine/expression"
+	"github.com/xlvector/rulengine/facts"
+	"github.com/xlvector/rulengine/logic"
 	"os"
-	"rulengine/expression"
-	"rulengine/facts"
-	"rulengine/logic"
 	"strings"
 )
 

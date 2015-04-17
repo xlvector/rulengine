@@ -2,7 +2,7 @@ package expression
 
 import (
 	"container/list"
-	"rulengine/facts"
+	"github.com/xlvector/rulengine/facts"
 	"strconv"
 	"strings"
 )
