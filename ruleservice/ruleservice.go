@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/xlvector/rulengine"
+	"github.com/xlvector/rulengine/facts"
 	"log"
 	"net/http"
-	"rulengine"
-	"rulengine/facts"
 	"runtime/debug"
 	"time"
 )
